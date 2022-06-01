@@ -13,6 +13,7 @@ public class aemet {
 
     //DECLARACION DE VARIABLES GLOBALES
     static Scanner teclado = new Scanner(System.in);
+    static ArrayList<String> lista_Fechas = new ArrayList<String>();
     static ArrayList<Double> lista_TempMaximas = new ArrayList<Double>();
     static ArrayList<Double> lista_TempMinimas = new ArrayList<Double>();
     static int num_lineas = 0;
@@ -30,16 +31,16 @@ public class aemet {
         return anio_consulta;
     }
 
-    public static void leerArchivo(int anio) {
+    public static void leerArchivo(int anio) throws Exception {
         //DECLARACION DE VARIABLES
-        File archivo_anio = new File(".\\tenerife\\" + anio + ".txt");
+        File archivo_anio = new File("tenerife/" + anio + ".txt");
 
         //LECTURA DEL ARCHIVO Y RECOGIDA DE DATOS EN LAS VARIABLES
         try {
             Double diferenciaMaxima = 0.0;
             Scanner lector = new Scanner(archivo_anio);
             while (lector.hasNextLine()) {
-                String fecha = lector.next();
+                lista_Fechas.add(lector.next());
                 lista_TempMaximas.add(lector.nextDouble());
                 lista_TempMinimas.add(lector.nextDouble());
                 num_lineas++;
@@ -47,19 +48,17 @@ public class aemet {
             }
 //            System.out.println(num_lineas);
             lector.close();
-        } catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        } catch (InputMismatchException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+           //Tanto si fala al abrir el archivo, como al intentar leer un doble,
+           //le paso la excepción al main
+           throw e;
         }
     }
 
-    public static double calcularTemperaturaMaxima(ArrayList<Double> lista) {
+    public static double calcularTemperaturaMaxima(ArrayList<Double> lista) throws NullPointerException {
+        if (lista.isEmpty()) {
+            throw new NullPointerException("La lista de temperaturas está vacía");
+        }
         //Tomo el primer elemento del ArrayList como máximo temporal
         double temp_Maxima = lista.get(0);
         for (Double temperatura : lista) {
@@ -70,14 +69,18 @@ public class aemet {
         return temp_Maxima;
     }
 
-    public static double calcularTemperaturaMinima(ArrayList<Double> lista) {
-        double temp_Maxima = 100;
+    public static double calcularTemperaturaMinima(ArrayList<Double> lista) throws NullPointerException {
+        if (lista.isEmpty()) {
+            throw new NullPointerException("La lista de temperaturas está vacía");
+        }
+        //Tomo el primer elemento del ArrayList como mínimo temporal
+        double temp_Minima = lista.get(0);
         for (Double temperatura : lista) {
-            if (temperatura < temp_Maxima) {
-                temp_Maxima = temperatura;
+            if (temperatura < temp_Minima) {
+                temp_Minima = temperatura;
             }
         }
-        return temp_Maxima;
+        return temp_Minima;
     }
 
 //    public static double calcular_TempMinima_Superior(){
@@ -118,27 +121,28 @@ public class aemet {
 //        return sumaTemp_Minimas/num_lineas;
 //    }
     public static double calcularTemperaturaIntermedia(ArrayList<Double> lista1, ArrayList<Double> lista2) {
-        Double media=0.0;
-        try{
-            media=(calcularTemperaturaMedia(lista1) + calcularTemperaturaMedia(lista2)) / 2;
-        }catch (NullPointerException e){
+        Double media = 0.0;
+        try {
+            media = (calcularTemperaturaMedia(lista1) + calcularTemperaturaMedia(lista2)) / 2;
+        } catch (NullPointerException e) {
             //Al menenos una de las dos listas está vacía
-            throw  e;
-        }return media;
+            throw e;
+        }
+        return media;
     }
 
     public static String calcularDiferenciaMayorTemp(ArrayList<Double> lista1, ArrayList<Double> lista2, ArrayList<String> fechas) {
         double diferenciaMayorTemporal = 0;
-        int posicionTemporal=0;
+        int posicionTemporal = 0;
         //Para cada par de temperaturas diarias, clculo la diferencia entre ellas.
         for (int i = 0; i < num_lineas; i++) {
-            Double diferenciaCalculada=lista1.get(i) - lista2.get(i);
-            if (diferenciaCalculada> diferenciaMayorTemporal) {
+            Double diferenciaCalculada = lista1.get(i) - lista2.get(i);
+            if (diferenciaCalculada > diferenciaMayorTemporal) {
                 diferenciaMayorTemporal = diferenciaCalculada;
-                posicionTemporal=i;
+                posicionTemporal = i;
             }
         }
-        return (diferenciaMayorTemporal+" del día "+fechas.get(posicionTemporal));
+        return (diferenciaMayorTemporal + " del día " + fechas.get(posicionTemporal));
     }
 
     public static void main(String[] args) {
@@ -146,6 +150,30 @@ public class aemet {
         //LLAMADA A FUNCIONES PARA LEER OPCIÓN DEL USUARIO Y LEER ARCHIVO CORRESPONDIENTE
         try {
             leerArchivo(leerOpcionUsuario());
+
+            //TEMPERATURA MAX. MÁS ALTA Y MÁS BAJA
+            System.out.println("Tº Máxima más alta y más baja: " + calcularTemperaturaMaxima(lista_TempMaximas) + "  ---  " + calcularTemperaturaMinima(lista_TempMaximas));
+            System.out.println("*****************************************************************");
+
+            //TEMPERATURA MÍN. MÁS ALTA Y MÁS BAJA
+            System.out.println("Tº Mínima más alta y más baja: " + calcularTemperaturaMaxima(lista_TempMinimas) + "  ---  " + calcularTemperaturaMinima(lista_TempMinimas));
+            System.out.println("*****************************************************************");
+
+            //TEMPERATURA MAX. MEDIA
+            System.out.println("Tº Máxima media: " + calcularTemperaturaMedia(lista_TempMaximas));
+            System.out.println("*****************************************************************");
+
+            //TEMPERATURA MÍN. MEDIA
+            System.out.println("Tº Mínima media: " + calcularTemperaturaMedia(lista_TempMinimas));
+            System.out.println("*****************************************************************");
+
+            //TEMPERATURA INTERMEDIA
+            System.out.println("Tº Intermedia: " + calcularTemperaturaIntermedia(lista_TempMaximas, lista_TempMinimas));
+            System.out.println("*****************************************************************");
+
+            //DÍA DE MAYOR DIFERENCIA TEMPERATURA MÁX Y MÍN
+            System.out.println("Tº de Mayor Diferencia entre Máxima y Mínima: " + calcularDiferenciaMayorTemp(lista_TempMaximas, lista_TempMinimas, lista_Fechas));
+            System.out.println("*****************************************************************");
         } catch (NumberFormatException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -153,30 +181,6 @@ public class aemet {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
-
-        //TEMPERATURA MAX. MÁS ALTA Y MÁS BAJA
-        System.out.println("Tº Máxima más alta y más baja: " + calcularTemperaturaMaxima(lista_TempMaximas) + "  ---  " + calcularTemperaturaMinima(lista_TempMaximas));
-        System.out.println("*****************************************************************");
-
-        //TEMPERATURA MÍN. MÁS ALTA Y MÁS BAJA
-        System.out.println("Tº Mínima más alta y más baja: " + calcularTemperaturaMaxima(lista_TempMinimas) + "  ---  " + calcularTemperaturaMinima(lista_TempMinimas));
-        System.out.println("*****************************************************************");
-
-        //TEMPERATURA MAX. MEDIA
-        System.out.println("Tº Máxima media: " + calcularTemperaturaMedia(lista_TempMaximas));
-        System.out.println("*****************************************************************");
-
-        //TEMPERATURA MÍN. MEDIA
-        System.out.println("Tº Mínima media: " + calcularTemperaturaMedia(lista_TempMinimas));
-        System.out.println("*****************************************************************");
-
-        //TEMPERATURA INTERMEDIA
-        System.out.println("Tº Intermedia: " + calcularTemperaturaIntermedia(lista_TempMaximas,lista_TempMinimas));
-        System.out.println("*****************************************************************");
-
-        //DÍA DE MAYOR DIFERENCIA TEMPERATURA MÁX Y MÍN
-        System.out.println("Tº de Mayor Diferencia entre Máxima y Mínima: " + calcular_DiferenciaMayor_Temp());
-        System.out.println("*****************************************************************");
 
     }
 
